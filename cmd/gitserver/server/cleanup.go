@@ -99,11 +99,18 @@ func (s *Server) cleanupRepos() {
 		return false, nil
 	}
 
+	isNoneBare := func(dir GitDir) bool {
+		cmd := exec.Command("git", "-C", dir.Path(), "rev-parse", "--is-bare-repository")
+		dir.Set(cmd)
+		b, _ := cmd.Output()
+		return strings.TrimSpace(string(b)) == "false"
+	}
+
 	maybeRemoveCorrupt := func(dir GitDir) (done bool, err error) {
 		// We treat repositories missing HEAD to be corrupt. Both our cloning
 		// and fetching ensure there is a HEAD file.
 		_, err = os.Stat(dir.Path("HEAD"))
-		if !os.IsNotExist(err) {
+		if !os.IsNotExist(err) && !isNoneBare(dir) {
 			return false, err
 		}
 
