@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Card renders card correctly 1`] = `
+<DocumentFragment>
+  <div
+    class="card cardInteractive"
+  >
+    <div
+      class="cardBody"
+    >
+      <div
+        class="cardTitle"
+      >
+        card title
+      </div>
+      <div
+        class="cardSubtitle"
+      >
+        card subtitle
+      </div>
+      <div>
+        Card Body
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
