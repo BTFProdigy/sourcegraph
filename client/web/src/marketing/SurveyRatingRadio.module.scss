@@ -2,6 +2,13 @@
     display: inline-block;
 }
 
+.fieldset {
+    :global(.form-check) {
+        padding-left: 0;
+        margin: 0.125rem;
+    }
+}
+
 .rating-radio {
     position: absolute;
     clip: rect(0, 0, 0, 0);

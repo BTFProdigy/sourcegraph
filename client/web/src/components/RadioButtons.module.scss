@@ -6,6 +6,15 @@
     margin: 0 -0.25rem;
 }
 
+.input {
+    :global(.form-check) {
+        margin: 0.25rem;
+        :global(.form-check-input) {
+            margin-top: 0.3rem;
+        }
+    }
+}
+
 .label {
     display: flex;
     user-select: none;
