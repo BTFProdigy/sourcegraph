@@ -1,0 +1,46 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Tooltip Hoverable Tooltip shows tooltip properly on hover 1`] = `
+<body>
+  <div>
+    <div>
+      Hover on
+       
+      <strong
+        data-testid="hoverable 1"
+        data-tooltip="Tooltip 1"
+      >
+        me
+      </strong>
+      , or
+       
+      <strong
+        data-testid="hoverable 2"
+        data-tooltip="Tooltip 2"
+      >
+        me
+      </strong>
+    </div>
+  </div>
+  <div>
+    <div
+      class="tooltip fade"
+    >
+      <div
+        class="tooltip show bs-tooltip-auto"
+        style="position: absolute; top: 0px; left: 0px; opacity: 0; pointer-events: none;"
+      >
+        <div
+          class="tooltip-inner tooltipInner"
+          role="tooltip"
+        >
+          Tooltip 1
+        </div>
+        <span
+          class="arrow"
+        />
+      </div>
+    </div>
+  </div>
+</body>
+`;
