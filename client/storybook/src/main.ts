@@ -5,16 +5,19 @@ import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin'
 import { remove } from 'lodash'
 import signale from 'signale'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
-import TerserPlugin from 'terser-webpack-plugin'
-import webpack, { DllReferencePlugin, Configuration, DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
+import { DllReferencePlugin, Configuration, DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 
 import {
+    NODE_MODULES_PATH,
     ROOT_PATH,
+    getCSSLoaders,
+    getCacheConfig,
     getMonacoCSSRule,
     getMonacoTTFRule,
     getMonacoWebpackPlugin,
-    getCSSLoaders,
+    providePluginConfig,
+    terserPluginConfig,
 } from '@sourcegraph/build-config'
 
 import { ensureDllBundleIsReady } from './dllPlugin'
@@ -23,7 +26,6 @@ import {
     monacoEditorPath,
     dllPluginConfig,
     dllBundleManifestPath,
-    nodeModulesPath,
     getBasicCSSLoader,
     readJsonFile,
     storybookWorkspacePath,
@@ -108,11 +110,7 @@ const config = {
                 NODE_ENV: JSON.stringify(config.mode),
                 'process.env.NODE_ENV': JSON.stringify(config.mode),
             }),
-            new webpack.ProvidePlugin({
-                process: 'process/browser',
-                // Based on the issue: https://github.com/webpack/changelog-v5/issues/10
-                Buffer: ['buffer', 'Buffer'],
-            })
+            providePluginConfig
         )
 
         if (environment.shouldMinify) {
@@ -120,32 +118,13 @@ const config = {
                 throw new Error('The structure of the config changed, expected config.optimization to be not-null')
             }
             config.optimization.minimize = true
-            config.optimization.minimizer = [
-                new TerserPlugin({
-                    terserOptions: {
-                        compress: {
-                            // Don't inline functions, which causes name collisions with uglify-es:
-                            // https://github.com/mishoo/UglifyJS2/issues/2842
-                            inline: 1,
-                        },
-                    },
-                }),
-            ]
+            config.optimization.minimizer = [terserPluginConfig]
         } else {
             // Use cache only in `development` mode to speed up production build.
-            config.cache = {
-                type: 'filesystem',
-                buildDependencies: {
-                    // Invalidate cache on config change.
-                    config: [
-                        __filename,
-                        path.resolve(storybookWorkspacePath, 'babel.config.js'),
-                        path.resolve(ROOT_PATH, 'babel.config.js'),
-                        path.resolve(ROOT_PATH, 'postcss.config.js'),
-                        path.resolve(__dirname, './webpack.config.dll.ts'),
-                    ],
-                },
-            }
+            config.cache = getCacheConfig(
+                path.resolve(storybookWorkspacePath, 'babel.config.js'),
+                path.resolve(__dirname, './webpack.config.dll.ts')
+            )
         }
 
         // We don't use Storybook's default Babel config for our repo, it doesn't include everything we need.
@@ -159,7 +138,7 @@ const config = {
             },
         })
 
-        const storybookPath = path.resolve(nodeModulesPath, '@storybook')
+        const storybookPath = path.resolve(NODE_MODULES_PATH, '@storybook')
 
         // Put our style rules at the beginning so they're processed by the time it
         // gets to storybook's style rules.

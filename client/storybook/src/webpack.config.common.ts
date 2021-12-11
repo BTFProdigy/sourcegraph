@@ -4,10 +4,10 @@ import path from 'path'
 import { parse } from '@sqs/jsonc-parser'
 import { RuleSetUseItem } from 'webpack'
 
-export const rootPath = path.resolve(__dirname, '../../..')
-export const nodeModulesPath = path.resolve(rootPath, 'node_modules')
-export const monacoEditorPath = path.resolve(nodeModulesPath, 'monaco-editor')
-export const storybookWorkspacePath = path.resolve(rootPath, 'client/storybook')
+import { ROOT_PATH, NODE_MODULES_PATH } from '@sourcegraph/build-config'
+
+export const monacoEditorPath = path.resolve(NODE_MODULES_PATH, 'monaco-editor')
+export const storybookWorkspacePath = path.resolve(ROOT_PATH, 'client/storybook')
 export const dllBuildPath = path.resolve(storybookWorkspacePath, 'assets/dll-bundle')
 export const dllBundleManifestPath = path.resolve(dllBuildPath, 'dll-bundle.manifest.json')
 

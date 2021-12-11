@@ -7,13 +7,20 @@ const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const logger = require('gulplog')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
-const TerserPlugin = require('terser-webpack-plugin')
 const webpack = require('webpack')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
-const { getMonacoWebpackPlugin, getCSSLoaders } = require('@sourcegraph/build-config')
+const {
+  ROOT_PATH,
+  NODE_MODULES_PATH,
+  babelLoader,
+  getCacheConfig,
+  getMonacoWebpackPlugin,
+  getCSSLoaders,
+  terserPluginConfig,
+  providePluginConfig,
+} = require('@sourcegraph/build-config')
 
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
 const { isHotReloadEnabled } = require('./src/integration/environment')
@@ -45,25 +52,15 @@ if (shouldAnalyze) {
   logger.info('Running bundle analyzer')
 }
 
-const rootPath = path.resolve(__dirname, '..', '..')
 const hotLoadablePaths = ['branded', 'shared', 'web', 'wildcard'].map(workspace =>
-  path.resolve(rootPath, 'client', workspace, 'src')
+  path.resolve(ROOT_PATH, 'client', workspace, 'src')
 )
-const nodeModulesPath = path.resolve(rootPath, 'node_modules')
-const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
+const monacoEditorPaths = [path.resolve(NODE_MODULES_PATH, 'monaco-editor')]
 
 const isEnterpriseBuild = process.env.ENTERPRISE && Boolean(JSON.parse(process.env.ENTERPRISE))
 const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
 
 const styleLoader = isDevelopment ? 'style-loader' : MiniCssExtractPlugin.loader
-
-const babelLoader = {
-  loader: 'babel-loader',
-  options: {
-    cacheDirectory: true,
-    configFile: path.join(__dirname, 'babel.config.js'),
-  },
-}
 
 const extensionHostWorker = /main\.worker\.ts$/
 
@@ -84,32 +81,10 @@ const config = {
   },
   target: 'browserslist',
   // Use cache only in `development` mode to speed up production build.
-  cache: isCacheEnabled && {
-    type: 'filesystem',
-    buildDependencies: {
-      // Invalidate cache on config change.
-      config: [
-        __filename,
-        path.resolve(__dirname, 'babel.config.js'),
-        path.resolve(rootPath, 'babel.config.js'),
-        path.resolve(rootPath, 'postcss.config.js'),
-      ],
-    },
-  },
+  cache: isCacheEnabled && getCacheConfig(path.resolve(__dirname, 'babel.config.js')),
   optimization: {
     minimize: isProduction,
-    minimizer: [
-      new TerserPlugin({
-        terserOptions: {
-          compress: {
-            // Don't inline functions, which causes name collisions with uglify-es:
-            // https://github.com/mishoo/UglifyJS2/issues/2842
-            inline: 1,
-          },
-        },
-      }),
-      new CssMinimizerWebpackPlugin(),
-    ],
+    minimizer: [terserPluginConfig, new CssMinimizerWebpackPlugin()],
     splitChunks: {
       cacheGroups: {
         react: {
@@ -134,7 +109,7 @@ const config = {
     app: isEnterpriseBuild ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
   },
   output: {
-    path: path.join(rootPath, 'ui', 'assets'),
+    path: path.join(ROOT_PATH, 'ui', 'assets'),
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
     // Note: [name] will vary depending on the Webpack chunk. If specified, it will use a provided chunk name, otherwise it will fallback to a deterministic id.
     filename:
@@ -154,11 +129,7 @@ const config = {
         ...(shouldServeIndexHTML && webServerEnvironmentVariables),
       },
     }),
-    new webpack.ProvidePlugin({
-      process: 'process/browser',
-      // Based on the issue: https://github.com/webpack/changelog-v5/issues/10
-      Buffer: ['buffer', 'Buffer'],
-    }),
+    providePluginConfig,
     new MiniCssExtractPlugin({
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
       filename: mode === 'production' ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
@@ -207,7 +178,7 @@ const config = {
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148
-      'react-visibility-sensor': path.resolve(rootPath, 'node_modules/react-visibility-sensor/visibility-sensor.js'),
+      'react-visibility-sensor': path.resolve(ROOT_PATH, 'node_modules/react-visibility-sensor/visibility-sensor.js'),
     },
   },
   module: {
